@@ -1,4 +1,4 @@
-package: github.com/maxthomas/gretchin
+package: github.com/maxthomas/hardhat
 import:
 - package: git.apache.org/thrift.git
   submodules:
