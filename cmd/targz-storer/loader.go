@@ -3,13 +3,13 @@ package main
 import (
 	"archive/tar"
 	"compress/gzip"
-	"flag"
 	"io"
 	"os"
 
-	"git.apache.org/thrift.git/lib/go/thrift"
-
 	"github.com/hltcoe/goncrete"
+	flag "github.com/spf13/pflag"
+
+	"git.apache.org/thrift.git/lib/go/thrift"
 
 	"go.uber.org/zap"
 )
@@ -30,8 +30,8 @@ func main() {
 		return
 	}
 
-	transFactory := thrift.NewTFramedTransportFactory(thrift.NewTBufferedTransportFactory(8192))
-	protoFactory := thrift.NewTCompactProtocolFactory()
+	transFactory := goncrete.DefaultTransportFactory()
+	protoFactory := goncrete.DefaultProtocolFactory()
 
 	f, err := os.Open(*inputFile)
 	if err != nil {
@@ -95,13 +95,18 @@ func main() {
 		log.Fatal("store not alive")
 	}
 
-	var ctr int
+	var ctr, errCtr int
+	logPlusCtr := log.With(zap.Int("n-comms", ctr), zap.Int("n-errs", errCtr))
 	for item := range comms {
 		if err = storeCli.Store(item); err != nil {
-			log.Error("error storing comm", zap.String("id", item.ID), zap.Error(err))
+			logPlusCtr.Error("error storing comm", zap.String("id", item.ID), zap.Error(err))
+			errCtr++
 		} else {
 			ctr++
+			if ctr%1000 == 0 {
+				logPlusCtr.Info("ingesting")
+			}
 		}
 	}
-	log.Info("Done", zap.Int("stored", ctr))
+	logPlusCtr.Info("done")
 }

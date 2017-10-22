@@ -8,6 +8,5 @@ import:
 - package: go.uber.org/zap
   version: ^1
 - package: github.com/spf13/pflag
-- package: github.com/maxthomas/gretchin
 testImport:
 - package: github.com/stretchr/testify
