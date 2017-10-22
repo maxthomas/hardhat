@@ -1,0 +1,12 @@
+language: go
+go:
+  - 1.9
+before_install:
+  - mkdir -p $GOPATH/bin
+  - go get github.com/Masterminds/glide
+  - which glide
+install:
+  - glide up
+  - go get golang.org/x/tools/cmd/cover
+script:
+  - go test -cover -race -cpu 1,2,4 -timeout=15000ms $(glide novendor)
