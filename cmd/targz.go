@@ -20,7 +20,7 @@ var (
 )
 
 func init() {
-	LoaderCmd.AddCommand(loadTarGzCmd)
+	StoreCmd.AddCommand(loadTarGzCmd)
 	loadTarGzCmd.Flags().BoolVarP(&GZIPCompressed, "gzipped", "z", true, "Is the tar archive gzip compressed?")
 }
 
@@ -78,7 +78,7 @@ By default, the tar file is assumed to be gzip compressed. This can be disabled.
 			transportFactory = thrift.NewTFramedTransportFactory(transportFactory)
 		}
 		protocolFactory := thrift.NewTCompactProtocolFactory()
-		tport, err := NewSocketServer()
+		tport, err := NewSocketServer(StoreHost, StorePort)
 		if err != nil {
 			fmt.Printf("error creating socket: %v\n", err)
 			os.Exit(-1)
@@ -100,7 +100,7 @@ By default, the tar file is assumed to be gzip compressed. This can be disabled.
 
 		tarRdr := tar.NewReader(rdr)
 		errorChan := make(chan error, 2)
-		tarItems := make(chan []byte, BatchSize)
+		tarItems := make(chan []byte, 10)
 
 		// load the file in parallel
 		go func(trdr *tar.Reader, data chan<- []byte, errorC chan<- error) {
