@@ -89,8 +89,9 @@ var SummarizeCmd = &cobra.Command{
 			fmt.Printf("error summary call: %v\n", err)
 			os.Exit(-1)
 		}
-
-		if resp.IsSetSummaryCommunication() && resp.GetSummaryCommunication().IsSetText() {
+		if resp == nil {
+			fmt.Println("received nil Summary")
+		} else if resp.IsSetSummaryCommunication() && resp.GetSummaryCommunication().IsSetText() {
 			fmt.Println(resp.GetSummaryCommunication().GetText())
 		} else {
 			fmt.Println("no summary communication text received")
