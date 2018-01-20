@@ -2,3 +2,4 @@ vendor/
 glide.lock
 targz-storer
 hardhat
+hardhat_linux_amd64

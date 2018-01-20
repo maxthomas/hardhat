@@ -1,12 +1,23 @@
 language: go
 go:
-  - 1.9
+- 1.9
 before_install:
-  - mkdir -p $GOPATH/bin
-  - go get github.com/Masterminds/glide
-  - which glide
+- mkdir -p $GOPATH/bin
+- go get github.com/Masterminds/glide
+- which glide
 install:
-  - glide up
-  - go get golang.org/x/tools/cmd/cover
+- glide up
+- go get golang.org/x/tools/cmd/cover
+- go get github.com/mitchellh/gox
 script:
-  - go test -cover -race -cpu 1,2,4 -timeout=15000ms $(glide novendor)
+- go test -cover -race -cpu 1,2,4 -timeout=15000ms $(glide novendor)
+- gox -osarch="linux/amd64"
+deploy:
+  provider: releases
+  skip_cleanup: true
+  api_key:
+    secure: gCRghpMbWkFDiTgDa40Von/6ryy9I1iWdxM2GuSMlABVqxx+yVI90To258YENggQ+Br/PiKQPjhGRCjKEmXdtqatAyUbUn3RFhaYC8zxfXR0c9j4TKJeIwRX47umVPIAwVOEudHG0rTP8OEOVlD2xEpOlO/lc1waiOIe5ZrpGf67tO1rtp62yM3JLrsn8zIZasOhPgHBmS6fLwybPa1nbt86oUeVyW+RDzwSeihkuM3rPHBTzVwcEiLMwW4hK7sa0HL7kAyCOgiqwGwc/+fX3WeQN/qfpIvV5eHbB76hhcknXW6uzlLL4cNGyDDAqXafO+uaRyljYacVNurTAPqLdj7PtKsrbm9mAv/UwZ0u7Mx7P6oo8yVt76zEAWjblolpo76aw8ivrqEhkItEuJjxJ2dmmjYhajB9/Ei2bBuOUfnCx1eNQjHvIbZ+nm+D6ow3l6XHhwixDh9fdAX5AAOuX5RMC5u7nTj+uSCZSohJ8gw/xFDCBFpxkxHjvAGBnXqI64pq69GiM8LdDn9ipeuMXReGIheXPyzBs1sHf8qlB9SeJ918rgEbc40A+k6kTlytDlPD6fJUxhNjgcyTq+/IKY0dS/uM9BfOPi+l1bFX7gOyaBJ/yrqTb+LmcIRjrnnZV/rPTS57vUa/PSSISLR74kF9pXBaGQXor5GdAAUqFJU=
+  file: hardhat_linux_amd64
+  on:
+    repo: maxthomas/hardhat
+    tags: true
