@@ -23,6 +23,9 @@ var (
 	UUIDs []string
 	// TypeString is the type of summarization request
 	TypeString string
+
+	// MaxTokens is the maximum number of tokens to submit
+	MaxTokens uint
 )
 
 func init() {
@@ -32,6 +35,7 @@ func init() {
 	SummarizeCmd.PersistentFlags().Uint64Var(&SummarizePort, "summ-port", 22999, "Port of summarization service")
 	SummarizeCmd.Flags().StringVarP(&TypeString, "type", "t", "entity", "Summary source type (example: entity)")
 	SummarizeCmd.Flags().StringSliceVar(&UUIDs, "uuids", []string{}, "UUIDs to query")
+	SummarizeCmd.Flags().UintVar(&MaxTokens, "max-tokens", 250, "maximum tokens in summary")
 }
 
 var SummarizeCmd = &cobra.Command{
@@ -78,6 +82,8 @@ var SummarizeCmd = &cobra.Command{
 		}
 
 		summReq := goncrete.NewSummarizationRequest()
+		thriftMaxTokens := int32(MaxTokens)
+		summReq.MaximumTokens = thrift.Int32Ptr(thriftMaxTokens)
 		for _, uuid := range UUIDs {
 			concUUID := goncrete.NewUUID()
 			concUUID.UuidString = uuid
