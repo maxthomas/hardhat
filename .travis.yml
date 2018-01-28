@@ -2,16 +2,12 @@ language: go
 go:
 - 1.9
 before_install:
-- mkdir -p $GOPATH/bin
-- go get github.com/Masterminds/glide
-- which glide
+- sh scripts/before-install.sh
 install:
-- glide up
-- go get golang.org/x/tools/cmd/cover
-- go get github.com/mitchellh/gox
+- sh scripts/install.sh
 script:
 - go test -cover -race -cpu 1,2,4 -timeout=15000ms $(glide novendor)
-- gox -osarch="linux/amd64"
+- sh scripts/build.sh
 deploy:
   provider: releases
   skip_cleanup: true
