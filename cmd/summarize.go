@@ -26,6 +26,9 @@ var (
 
 	// MaxTokens is the maximum number of tokens to submit
 	MaxTokens uint
+
+	// IsCapabilities calls GetCapabilities then quits
+	IsCapabilities bool
 )
 
 func init() {
@@ -36,6 +39,7 @@ func init() {
 	SummarizeCmd.Flags().StringVarP(&TypeString, "type", "t", "entity", "Summary source type (example: entity)")
 	SummarizeCmd.Flags().StringSliceVar(&UUIDs, "uuids", []string{}, "UUIDs to query")
 	SummarizeCmd.Flags().UintVar(&MaxTokens, "max-tokens", 250, "maximum tokens in summary")
+	SummarizeCmd.Flags().BoolVar(&IsCapabilities, "capabilities", false, "perform a getCapabilities call then exit")
 }
 
 var SummarizeCmd = &cobra.Command{
@@ -43,11 +47,17 @@ var SummarizeCmd = &cobra.Command{
 	Short: "Client for interacting with a summarize service",
 	Long:  `This provides a client for interacting with a summarization service.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		summType, err := goncrete.SummarySourceTypeFromString(strings.ToUpper(TypeString))
-		if err != nil {
-			fmt.Printf("error parsing summary source type: %v\n", err)
-			fmt.Println("check available types: " + summaryTypesURL)
-			os.Exit(-1)
+		var summType goncrete.SummarySourceType
+		var err error
+
+		// if this is not a capabilities check, validate the input
+		if !IsCapabilities {
+			summType, err = goncrete.SummarySourceTypeFromString(strings.ToUpper(TypeString))
+			if err != nil {
+				fmt.Printf("error parsing summary source type: %v\n", err)
+				fmt.Println("check available types: " + summaryTypesURL)
+				os.Exit(-1)
+			}
 		}
 
 		var transportFactory thrift.TTransportFactory
@@ -79,6 +89,20 @@ var SummarizeCmd = &cobra.Command{
 		if err != nil || !alive {
 			fmt.Printf("server not alive / error querying alive: %v", err)
 			os.Exit(-1)
+		}
+		if IsCapabilities {
+			caps, capErr := summCli.GetCapabilities()
+			if capErr != nil {
+				fmt.Printf("error during get capabilities call: %v", capErr.Error())
+				os.Exit(-1)
+			}
+
+			fmt.Printf("Received %v capabilities from server:\n", len(caps))
+			for idx := range caps {
+				cap := caps[idx]
+				fmt.Printf("\t%v\n", cap.String())
+			}
+			return
 		}
 
 		summReq := goncrete.NewSummarizationRequest()
