@@ -5,6 +5,13 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+
+	"git.apache.org/thrift.git/lib/go/thrift"
+	"github.com/hltcoe/goncrete"
+)
+
+var (
+	protocolFactory = thrift.NewTCompactProtocolFactory()
 )
 
 func LoadTarFile(tarRdr *tar.Reader, data chan<- []byte) error {
@@ -24,4 +31,15 @@ func LoadTarFile(tarRdr *tar.Reader, data chan<- []byte) error {
 		data <- dataBytes
 	}
 	return nil
+}
+
+// LoadCommunication takes in a byte array and returns a Communication or error
+func LoadCommunication(c []byte) (*goncrete.Communication, error) {
+	memBuf := thrift.NewTMemoryBuffer()
+	deser := thrift.NewTDeserializer()
+	deser.Protocol = protocolFactory.GetProtocol(memBuf)
+	deser.Transport = memBuf
+	comm := goncrete.NewCommunication()
+	err := deser.Read(comm, c)
+	return comm, err
 }
