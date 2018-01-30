@@ -2,12 +2,15 @@ package cmd
 
 import (
 	"fmt"
+	"io/ioutil"
 	"os"
 	"strings"
 
 	"git.apache.org/thrift.git/lib/go/thrift"
 	"github.com/hltcoe/goncrete"
 	"github.com/spf13/cobra"
+
+	"github.com/maxthomas/hardhat/utils"
 )
 
 const (
@@ -29,6 +32,10 @@ var (
 
 	// IsCapabilities calls GetCapabilities then quits
 	IsCapabilities bool
+
+	// CommunicationPath takes in a path to a communication to
+	// send to the summary service
+	CommunicationPath string
 )
 
 func init() {
@@ -40,6 +47,8 @@ func init() {
 	SummarizeCmd.Flags().StringSliceVar(&UUIDs, "uuids", []string{}, "UUIDs to query")
 	SummarizeCmd.Flags().UintVar(&MaxTokens, "max-tokens", 250, "maximum tokens in summary")
 	SummarizeCmd.Flags().BoolVar(&IsCapabilities, "capabilities", false, "perform a getCapabilities call then exit")
+	SummarizeCmd.Flags().StringVar(&CommunicationPath, "path", "", "path to concrete communication to send")
+
 }
 
 var SummarizeCmd = &cobra.Command{
@@ -47,6 +56,7 @@ var SummarizeCmd = &cobra.Command{
 	Short: "Client for interacting with a summarize service",
 	Long:  `This provides a client for interacting with a summarization service.`,
 	Run: func(cmd *cobra.Command, args []string) {
+		var sourceComm *goncrete.Communication
 		var summType goncrete.SummarySourceType
 		var err error
 
@@ -57,6 +67,36 @@ var SummarizeCmd = &cobra.Command{
 				fmt.Printf("error parsing summary source type: %v\n", err)
 				fmt.Println("check available types: " + summaryTypesURL)
 				os.Exit(-1)
+			}
+		}
+
+		// if the CommunicationPath flag is set, validate that it can
+		// be successfully deserialized
+		if CommunicationPath != "" {
+			if _, err := os.Stat(CommunicationPath); err != nil {
+				if os.IsNotExist(err) {
+					fmt.Printf("no file at: %v\n", CommunicationPath)
+					os.Exit(129)
+				} else {
+					fmt.Printf("error occurred during file check: %v\n", err.Error())
+					os.Exit(130)
+				}
+			}
+			commFile, err := os.Open(CommunicationPath)
+			if err != nil {
+				fmt.Printf("error loading file: %v\n", err.Error())
+				os.Exit(131)
+			}
+			defer commFile.Close()
+			commBytes, err := ioutil.ReadAll(commFile)
+			if err != nil {
+				fmt.Printf("error reading file contents: %v\n", err.Error())
+				os.Exit(132)
+			}
+			sourceComm, err = utils.LoadCommunication(commBytes)
+			if err != nil {
+				fmt.Printf("error deserializing communication: %v\n", err.Error())
+				os.Exit(133)
 			}
 		}
 
@@ -106,6 +146,11 @@ var SummarizeCmd = &cobra.Command{
 		}
 
 		summReq := goncrete.NewSummarizationRequest()
+		if sourceComm != nil {
+			fmt.Printf("setting source communication: %v\n", sourceComm.GetID())
+			summReq.SourceCommunication = sourceComm
+		}
+
 		thriftMaxTokens := int32(MaxTokens)
 		summReq.MaximumTokens = thrift.Int32Ptr(thriftMaxTokens)
 		for _, uuid := range UUIDs {
@@ -122,7 +167,7 @@ var SummarizeCmd = &cobra.Command{
 		if resp == nil {
 			fmt.Println("received nil Summary")
 		} else if resp.IsSetSummaryCommunication() && resp.GetSummaryCommunication().IsSetText() {
-			fmt.Println(resp.GetSummaryCommunication().GetText())
+			fmt.Printf("received summary text: %v\n", resp.GetSummaryCommunication().GetText())
 		} else {
 			fmt.Println("no summary communication text received")
 		}
