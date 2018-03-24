@@ -1,4 +1,4 @@
-package cmd
+package app
 
 import (
 	"archive/tar"
@@ -11,7 +11,7 @@ import (
 	"git.apache.org/thrift.git/lib/go/thrift"
 
 	"github.com/hltcoe/goncrete"
-	"github.com/maxthomas/hardhat/utils"
+	utils "github.com/maxthomas/hardhat/pkg/util"
 	"github.com/spf13/cobra"
 )
 

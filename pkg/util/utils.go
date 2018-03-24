@@ -1,4 +1,4 @@
-package utils
+package util
 
 import (
 	"archive/tar"
@@ -14,6 +14,8 @@ var (
 	protocolFactory = thrift.NewTCompactProtocolFactory()
 )
 
+// LoadTarFile takes in a tar.Reader and pushes the files (not dirs)
+// to a channel
 func LoadTarFile(tarRdr *tar.Reader, data chan<- []byte) error {
 	var err error
 	for {

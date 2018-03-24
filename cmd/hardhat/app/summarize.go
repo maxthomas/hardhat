@@ -1,4 +1,4 @@
-package cmd
+package app
 
 import (
 	"fmt"
@@ -10,7 +10,7 @@ import (
 	"github.com/hltcoe/goncrete"
 	"github.com/spf13/cobra"
 
-	"github.com/maxthomas/hardhat/utils"
+	utils "github.com/maxthomas/hardhat/pkg/util"
 )
 
 const (
