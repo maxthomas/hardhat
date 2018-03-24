@@ -1,6 +1,7 @@
 package util
 
 import (
+	"sync"
 	"testing"
 
 	"git.apache.org/thrift.git/lib/go/thrift"
@@ -22,20 +23,34 @@ func TestSerPool(t *testing.T) {
 		comms <- sample.Communication()
 	}
 	close(comms)
-	for i := 0; i < 3; i++ {
-		go func() {
-			for item := range comms {
-				ser := pool.Get().(*thrift.TSerializer)
 
+	errs := make(chan error, 4)
+	var wg sync.WaitGroup
+	for i := 0; i < 3; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			ser := pool.Get().(*thrift.TSerializer)
+			defer pool.Put(ser)
+			ser.Transport.Reset()
+
+			for item := range comms {
 				bytez, err := ser.Write(item)
-				if assert.NoError(t, err) {
-					assert.FailNow(t, "failed parallel serialization")
+				if !assert.NoError(t, err) {
+					errs <- err
+					return
 				}
 
-				assert.NotNil(t, bytez)
-				ser.Transport.Reset()
-				pool.Put(ser)
+				if !assert.NotNil(t, bytez) {
+					errs <- err
+					return
+				}
 			}
 		}()
+	}
+	wg.Wait()
+	if len(errs) > 0 {
+		firstErr := <-errs
+		assert.FailNow(t, "at least one error", firstErr.Error())
 	}
 }
