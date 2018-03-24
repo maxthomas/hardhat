@@ -1,13 +1,14 @@
 language: go
 go:
-- 1.9
+- "1.10"
 before_install:
 - sh scripts/before-install.sh
 install:
 - sh scripts/install.sh
 script:
 - go test -cover -race -cpu 1,2,4 -timeout=15000ms $(glide novendor)
-- sh scripts/build.sh
+- sh scripts/build-hardhat.sh
+- cd -
 deploy:
   provider: releases
   skip_cleanup: true
