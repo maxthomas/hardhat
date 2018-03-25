@@ -7,7 +7,6 @@ import (
 	"git.apache.org/thrift.git/lib/go/thrift"
 	"github.com/hltcoe/goncrete"
 	"github.com/maxthomas/hardhat/pkg/annotator"
-	thriftutil "github.com/maxthomas/hardhat/pkg/util/thrift"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
 )
@@ -18,7 +17,9 @@ var AnnotateCmd = &cobra.Command{
 	Use:   "annotator",
 	Short: "Stand up an annotate server",
 	Run: func(cmd *cobra.Command, args []string) {
-		srv, err := thriftutil.NewServerSocket(Host, uint64(Port))
+		cfg := getConfig()
+		logger.Info("initialized", zap.Object("configuration", &cfg))
+		srv, err := cfg.serverSocket()
 		if err != nil {
 			fmt.Printf("error open socket: %v\n", err.Error())
 			os.Exit(3)
@@ -26,7 +27,7 @@ var AnnotateCmd = &cobra.Command{
 		defer srv.Close()
 
 		annotator := annotator.NewCopier(logger)
-		transFactory := thriftutil.TransportFactory(Buffered, Framed)
+		transFactory := cfg.transportFactory()
 		protoFactory := goncrete.DefaultProtocolFactory()
 		proc := goncrete.NewAnnotateCommunicationServiceProcessor(annotator)
 		srvr := thrift.NewTSimpleServer4(proc, srv, transFactory, protoFactory)

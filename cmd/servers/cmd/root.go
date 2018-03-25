@@ -1,50 +1,90 @@
 package cmd
 
 import (
+	"fmt"
+	"os"
+
+	"git.apache.org/thrift.git/lib/go/thrift"
+	thriftutil "github.com/maxthomas/hardhat/pkg/util/thrift"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
+)
+
+const (
+	// viper consts
+	prefix = "hardhat"
+
+	// viper env vars
+	host     = "host"
+	port     = "port"
+	buffered = "transport_buffered"
+	framed   = "transport_framed"
 )
 
 var (
-	// Buffered indicates if the Thrift transport will be buffered
-	Buffered bool
-	// Framed indicates if the Thrift transport will be framed
-	Framed bool
-
-	// Host is the server's host
-	Host string
-
-	// Port is the server's port
-	Port uint32
-
-	// ErrorRate is the percentage of errors returned
-	ErrorRate float32
-
 	// a default logger
 	logger, _ = zap.NewProduction()
+
+	// ensure that config impls ObjectMarshaler
+	_ zapcore.ObjectMarshaler = (*config)(nil)
 )
 
 func init() {
 	cobra.OnInitialize(initConfig)
-	RootCmd.PersistentFlags().BoolVar(&Buffered, "buffered", false, "Buffer the Thrift transport")
-	RootCmd.PersistentFlags().BoolVar(&Framed, "framed", true, "Frame the Thrift transport")
-	RootCmd.PersistentFlags().StringVar(&Host, "host", "", "hostname to listen on")
-	RootCmd.PersistentFlags().Uint32VarP(&Port, "port", "p", 41170, "port to listen on")
 
-	RootCmd.PersistentFlags().Float32VarP(&ErrorRate, "error-rate", "e", 0.0, "percentage of errors to return")
-
-	viper.BindPFlag("host", RootCmd.PersistentFlags().Lookup("host"))
-	viper.SetDefault("host", "")
-	viper.SetDefault("error_rate", 0.0)
+	viper.SetDefault(host, "")
+	viper.SetDefault(port, 41170)
+	viper.SetDefault(buffered, false)
+	viper.SetDefault(framed, true)
 }
 
 func initConfig() {
-	viper.SetEnvPrefix("servers")
-	viper.BindEnv("host")
-	viper.BindEnv("transport_buffered")
-	viper.BindEnv("transport_framed")
-	viper.BindEnv("error_rate")
+	viper.SetEnvPrefix(prefix)
+
+	viper.BindEnv(host)
+	viper.BindEnv(port)
+	viper.BindEnv(buffered)
+	viper.BindEnv(framed)
+}
+
+type config struct {
+	host     string
+	port     int
+	buffered bool
+	framed   bool
+}
+
+func getConfig() config {
+	p := viper.GetInt(port)
+	if p == 0 {
+		fmt.Printf("didn't parse port correctly; is this a port? %v\n", viper.GetString(port))
+		os.Exit(1)
+	}
+
+	return config{
+		viper.GetString(host),
+		p,
+		viper.GetBool(buffered),
+		viper.GetBool(framed),
+	}
+}
+
+func (c *config) transportFactory() thrift.TTransportFactory {
+	return thriftutil.TransportFactory(c.buffered, c.framed)
+}
+
+func (c *config) serverSocket() (*thrift.TServerSocket, error) {
+	return thriftutil.NewServerSocket(c.host, uint64(c.port))
+}
+
+func (c *config) MarshalLogObject(oe zapcore.ObjectEncoder) error {
+	oe.AddString("host", c.host)
+	oe.AddInt("port", c.port)
+	oe.AddBool("buffered", c.buffered)
+	oe.AddBool("framed", c.framed)
+	return nil
 }
 
 var RootCmd = &cobra.Command{
