@@ -23,14 +23,17 @@ var (
 	_ goncrete.AnnotateCommunicationService = (*Copier)(nil)
 )
 
-func (p *Copier) Annotate(original *goncrete.Communication) (*goncrete.Communication, error) {
+func (c *Copier) Annotate(original *goncrete.Communication) (*goncrete.Communication, error) {
+	c.log.Debug("called", zap.String("method", "Annotate"))
 	if original == nil {
 		return nil, errors.New("can't copy a nil communication")
 	}
+	c.log.Debug("communication", zap.String("id", original.ID))
 	return original, nil
 }
 
 func (c *Copier) GetMetadata() (*goncrete.AnnotationMetadata, error) {
+	c.log.Debug("called", zap.String("method", "GetMetadata"))
 	amd := goncrete.NewAnnotationMetadata()
 	amd.Tool = "copier"
 	amd.Timestamp = time.Now().Unix()
@@ -39,9 +42,11 @@ func (c *Copier) GetMetadata() (*goncrete.AnnotationMetadata, error) {
 }
 
 func (c *Copier) GetDocumentation() (string, error) {
+	c.log.Debug("called", zap.String("method", "GetDocumentation"))
 	return "Copies the original communication and returns", nil
 }
 
-func (p *Copier) Shutdown() (err error) {
+func (c *Copier) Shutdown() (err error) {
+	c.log.Debug("called", zap.String("method", "Shutdown"))
 	return nil
 }
