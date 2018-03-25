@@ -1,0 +1,4 @@
+cmd/servers/*.Dockerfile
+
+vendor/
+_vendor/
