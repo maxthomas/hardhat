@@ -1,4 +1,6 @@
 vendor/
+_vendor*/
+
 glide.lock
 targz-storer
 hardhat
