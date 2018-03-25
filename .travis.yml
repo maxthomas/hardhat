@@ -6,7 +6,7 @@ before_install:
 install:
 - sh scripts/install.sh
 script:
-- go test -cover -race -cpu 1,2,4 -timeout=15000ms $(glide novendor)
+- go test -cover -race -cpu 1,2,4 -timeout=15000ms ./...
 - sh scripts/build-hardhat.sh
 - cd -
 deploy:

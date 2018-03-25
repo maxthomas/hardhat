@@ -1,5 +1,5 @@
 #!/usr/bin/env sh
 
-glide up
+dep ensure
 go get -u golang.org/x/tools/cmd/cover
 go get -u github.com/mitchellh/gox
